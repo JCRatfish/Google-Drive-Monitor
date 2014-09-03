@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -11,6 +12,12 @@ namespace Google_Drive_Monitor
 {
     class Program
     {
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         static void Main(string[] args)
         {
             /* 
@@ -20,6 +27,8 @@ namespace Google_Drive_Monitor
              * Google Drive (googledrivesync.exe) runs in two separate processes for some unknown reason.
              * If both of those processes are not running, kill and restart Google Drive.
             */
+
+            ShowWindow(GetConsoleWindow(), 0);
 
             string googledrivesyncPath = GoogleDriveInstallLocation;
             FileInfo googledrivesync = new FileInfo(Path.GetFileNameWithoutExtension(googledrivesyncPath));
