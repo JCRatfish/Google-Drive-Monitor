@@ -28,11 +28,25 @@ namespace Google_Drive_Monitor
              * If both of those processes are not running, kill and restart Google Drive.
             */
 
+            // Hide the console window.
             ShowWindow(GetConsoleWindow(), 0);
 
-            string googledrivesyncPath = GoogleDriveInstallLocation;
+            // Check if Google Drive is installed.
+            string googledrivesyncPath = string.Empty;
+            if (!string.IsNullOrEmpty(GoogleDriveInstallLocation))
+            {
+                googledrivesyncPath = GoogleDriveInstallLocation;
+            }
+            else
+            {
+                MessageBox.Show("Google Drive is not installed!");
+                Environment.Exit(0);
+            }
+
+            // Get file name without extension.
             FileInfo googledrivesync = new FileInfo(Path.GetFileNameWithoutExtension(googledrivesyncPath));
 
+            // Continuously check if Google Drive is running.
             while (true)
             {
                 // Collect the Google Drive processes.
@@ -48,7 +62,7 @@ namespace Google_Drive_Monitor
                         p.WaitForExit();
                     }
 
-                    // Start Google Drive again.
+                    // Start Google Drive.
                     try
                     {
                         Process.Start(googledrivesyncPath);
@@ -71,7 +85,14 @@ namespace Google_Drive_Monitor
             {
                 using (RegistryKey registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Google\Drive"))
                 {
-                    return (string)registryKey.GetValue("InstallLocation");
+                    if (registryKey != null)
+                    {
+                        return (string)registryKey.GetValue("InstallLocation");
+                    }
+                    else
+                    {
+                        return string.Empty;
+                    }
                 }
             }
         }
