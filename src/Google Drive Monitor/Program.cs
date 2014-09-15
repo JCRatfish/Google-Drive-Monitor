@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using JCS;
 
 namespace Google_Drive_Monitor
 {
@@ -32,19 +34,14 @@ namespace Google_Drive_Monitor
             ShowWindow(GetConsoleWindow(), 0);
 
             // Check if Google Drive is installed.
-            string googledrivesyncPath = string.Empty;
-            if (!string.IsNullOrEmpty(GoogleDriveInstallLocation))
+            if (ErrorMessages.Any(GoogleDriveInstallLocation.Contains))
             {
-                googledrivesyncPath = GoogleDriveInstallLocation;
-            }
-            else
-            {
-                MessageBox.Show("Google Drive is not installed!");
+                MessageBox.Show(GoogleDriveInstallLocation);
                 Environment.Exit(0);
             }
 
             // Get file name without extension.
-            FileInfo googledrivesync = new FileInfo(Path.GetFileNameWithoutExtension(googledrivesyncPath));
+            FileInfo googledrivesync = new FileInfo(Path.GetFileNameWithoutExtension(GoogleDriveInstallLocation));
 
             // Continuously check if Google Drive is running.
             while (true)
@@ -65,7 +62,7 @@ namespace Google_Drive_Monitor
                     // Start Google Drive.
                     try
                     {
-                        Process.Start(googledrivesyncPath);
+                        Process.Start(GoogleDriveInstallLocation);
                     }
                     catch (Exception e)
                     {
@@ -83,17 +80,44 @@ namespace Google_Drive_Monitor
         {
             get
             {
-                using (RegistryKey registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Google\Drive"))
+                switch (OSVersionInfo.Name)
                 {
-                    if (registryKey != null)
-                    {
-                        return (string)registryKey.GetValue("InstallLocation");
-                    }
-                    else
-                    {
-                        return string.Empty;
-                    }
+                    case "Windows XP":
+                        using (RegistryKey registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Google\Drive"))
+                        {
+                            if (registryKey != null)
+                            {
+                                return (string)registryKey.GetValue("InstallLocation");
+                            }
+                            else
+                            {
+                                return ErrorMessages[1];
+                            }
+                        }
+                    case "Windows 7":
+                        using (RegistryKey registryKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Google\Drive"))
+                        {
+                            if (registryKey != null)
+                            {
+                                return (string)registryKey.GetValue("InstallLocation");
+                            }
+                            else
+                            {
+                                return ErrorMessages[1];
+                            }
+                        }
+                    default:
+                        return ErrorMessages[0];
                 }
+            }
+        }
+
+        static string[] ErrorMessages
+        {
+            get
+            {
+                string[] errorMessages = new string[] { "Operating System Not Supported!", "Google Drive Not Installed!" };
+                return errorMessages;
             }
         }
     }
